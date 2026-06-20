@@ -1,0 +1,69 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // Change to 0x3F if not working
+SoftwareSerial rfid(2, 3);           // RX, TX (EM18 TX -> D2)
+
+String card = "";
+int total = 0;
+
+void setup() {
+  lcd.init();
+  lcd.backlight();
+  rfid.begin(9600);
+  pinMode(9, OUTPUT);
+
+  lcd.setCursor(0, 0);
+  lcd.print("Smart Trolley");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+
+  while (rfid.available()) {
+    char c = rfid.read();
+    card += c;
+    delay(5);
+  }
+
+  if (card.length() > 0) {
+
+    digitalWrite(9, HIGH);
+    delay(200);
+    digitalWrite(9, LOW);
+
+    lcd.clear();
+
+    // 🔹 CARD 1
+    if (card.indexOf("4B00CA0723A5") >= 0) {
+      lcd.print("Milk Rs:25");
+      total += 25;
+    }
+
+    // 🔹 CARD 2
+    else if (card.indexOf("4B00C9ED543B") >= 0) {
+      lcd.print("Rice Rs:60");
+      total += 60;
+    }
+
+    // 🔹 CARD 3
+    else if (card.indexOf("4B00C9C6F5B1") >= 0) {
+      lcd.print("Oil Rs:120");
+      total += 120;
+    }
+
+    else {
+      lcd.print("Unknown Item");
+    }
+
+    lcd.setCursor(0, 1);
+    lcd.print("Total: ");
+    lcd.print(total);
+
+    card = "";
+    delay(5000);
+    lcd.clear();
+  }
+}
